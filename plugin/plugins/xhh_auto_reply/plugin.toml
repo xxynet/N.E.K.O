@@ -1,0 +1,34 @@
+[plugin]
+id = "xhh_auto_reply"
+name = "小黑盒 AI 回帖"
+description = "使用小黑盒账号 Cookie 读取帖子与 @ 消息，通过 N.E.K.O 对话模型生成并发布顶级评论或楼中楼回复。"
+short_description = "小黑盒社区帖子评论、楼中楼回复与 AI 自动回帖。"
+keywords = ["小黑盒", "xiaoheihe", "comment", "auto-reply", "ai"]
+passive = true
+version = "0.1.0"
+type = "plugin"
+entry = "plugin.plugins.xhh_auto_reply:XHHAutoReplyPlugin"
+
+[plugin.author]
+name = "N.E.K.O Team"
+
+[plugin.sdk]
+recommended = ">=0.1.0,<0.2.0"
+supported = ">=0.1.0,<0.3.0"
+
+[plugin.store]
+enabled = false
+
+[plugin.ui]
+enabled = true
+
+[[plugin.ui.panel]]
+id = "main"
+title = "小黑盒 AI 回帖"
+entry = "static/index.html"
+context = "xhh_auto_reply"
+permissions = ["state:read", "action:call"]
+
+[plugin_runtime]
+enabled = true
+auto_start = false

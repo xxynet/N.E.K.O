@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>小黑盒 AI 回帖</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div><h1>小黑盒 AI 回帖</h1><p>社区帖子顶级评论、楼中楼回复与 @ 自动处理</p></div>
+      <span id="status" class="pill">未配置</span>
+    </header>
+
+    <section>
+      <h2>登录态</h2>
+      <p class="hint">在已登录的小黑盒网页打开开发者工具，从请求头复制完整 Cookie。Cookie 仅保存在插件私有数据目录。</p>
+      <label>Cookie<textarea id="cookie" rows="3" placeholder="user_heybox_id=...; ..."></textarea></label>
+      <label>HeyBox ID（可留空自动读取）<input id="heyboxId" inputmode="numeric"></label>
+      <div class="actions"><button id="importCookie">导入 Cookie</button><button id="clearCookie" class="danger">清除登录态</button></div>
+    </section>
+
+    <section>
+      <h2>安全与自动回复</h2>
+      <div class="grid">
+        <label class="check"><input id="dryRun" type="checkbox" checked> Dry-run（只生成，不发送）</label>
+        <label>轮询间隔（秒）<input id="pollInterval" type="number" min="15" value="60"></label>
+        <label>请求最小间隔（秒）<input id="requestInterval" type="number" min="0.2" step="0.1" value="2"></label>
+        <label>允许触发的用户 UID<input id="allowedUsers" placeholder="留空允许全部；多个用逗号分隔"></label>
+      </div>
+      <label>AI 回帖提示词<textarea id="replyPrompt" rows="4"></textarea></label>
+      <div class="actions"><button id="saveConfig">保存配置</button><button id="startAuto">开始监听</button><button id="stopAuto">停止监听</button><button id="pollOnce" class="secondary">立即检查一次</button></div>
+    </section>
+
+    <section>
+      <h2>手动发帖评论 / 回帖</h2>
+      <p class="hint">这里的“发帖评论”指在现有帖子下发布顶级评论，不创建新的社区主题帖。</p>
+      <div class="grid">
+        <label>帖子 Link ID<input id="linkId" type="number" min="1"></label>
+        <label>回复评论 ID（留空为顶级评论）<input id="commentId" type="number" min="1"></label>
+        <label>根评论 ID（楼中楼可选）<input id="rootId" type="number" min="1"></label>
+      </div>
+      <label>评论正文<textarea id="commentText" rows="4"></textarea></label>
+      <label>给 AI 的要求<textarea id="aiRequest" rows="3" placeholder="结合帖子内容，写一句自然简短的评论"></textarea></label>
+      <div class="actions"><button id="generate">AI 生成草稿</button><button id="send" class="danger">真实发布</button></div>
+    </section>
+
+    <section>
+      <h2>最近事件</h2>
+      <pre id="events">暂无记录</pre>
+    </section>
+  </main>
+  <div id="toast"></div>
+  <script src="./script.js"></script>
+</body>
+</html>
