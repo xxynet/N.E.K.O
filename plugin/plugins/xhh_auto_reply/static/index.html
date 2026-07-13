@@ -43,7 +43,8 @@
       </div>
       <label>评论正文<textarea id="commentText" rows="4"></textarea></label>
       <label>给 AI 的要求<textarea id="aiRequest" rows="3" placeholder="结合帖子内容，写一句自然简短的评论"></textarea></label>
-      <div class="actions"><button id="generate">AI 生成草稿</button><button id="send" class="danger">真实发布</button></div>
+      <p id="publishState" class="hint">填写有效的帖子 Link ID 和评论正文后可发布。</p>
+      <div class="actions"><button id="generate">AI 生成草稿</button><button id="send" class="danger" disabled>真实发布</button></div>
     </section>
 
     <section>
@@ -52,6 +53,6 @@
     </section>
   </main>
   <div id="toast"></div>
-  <script src="./script.js"></script>
+  <script src="./script.js?v=0.1.2"></script>
 </body>
 </html>

@@ -35,6 +35,12 @@ async function callPlugin(entry, args = {}) {
 const $ = id => document.getElementById(id);
 function toast(message) { const el=$('toast'); el.textContent=message; el.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>el.classList.remove('show'),3500); }
 function ids(value) { return String(value||'').split(/[,，\s]+/).filter(Boolean).map(Number).filter(Number.isFinite); }
+function updatePublishState() {
+  const validLink=Number($('linkId').value)>0, hasText=!!$('commentText').value.trim();
+  const ready=validLink&&hasText;
+  $('send').disabled=!ready;
+  $('publishState').textContent=ready ? '已就绪：点击“真实发布”将立即发送，不再弹出二次确认。' : '填写有效的帖子 Link ID 和评论正文后可发布。';
+}
 
 function applyState(data) {
   const configured = !!data.configured;
@@ -67,14 +73,19 @@ $('generate').onclick = async event => {
   const linkId=Number($('linkId').value); if(!linkId){toast('请填写帖子 Link ID');return;}
   const data=await act(event.currentTarget,'generate_post_comment',{link_id:linkId,request:$('aiRequest').value||'结合帖子内容生成自然评论',publish:false});
   $('commentText').value=data.text||'';
+  updatePublishState();
 };
+$('linkId').addEventListener('input',updatePublishState);
+$('commentText').addEventListener('input',updatePublishState);
 $('send').onclick = async event => {
   const linkId=Number($('linkId').value), commentId=Number($('commentId').value), rootId=Number($('rootId').value), text=$('commentText').value.trim();
   if(!linkId||!text){toast('请填写帖子 Link ID 和评论正文');return;}
-  if(!confirm('确定要把这条内容真实发布到小黑盒吗？')) return;
+  toast('正在发布到小黑盒…');
   if(commentId) await act(event.currentTarget,'reply_comment',{link_id:linkId,comment_id:commentId,root_id:rootId||commentId,text});
   else await act(event.currentTarget,'publish_post_comment',{link_id:linkId,text});
+  updatePublishState();
   await refresh();
 };
 
 refresh();
+updatePublishState();
