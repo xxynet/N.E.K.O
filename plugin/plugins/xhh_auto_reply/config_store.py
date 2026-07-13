@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import uuid
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +20,8 @@ class XHHConfigStore:
             "base_url": "https://api.xiaoheihe.cn",
             "version": "999.0.4",
             "web_version": "2.5",
-            "device_id": uuid.uuid4().hex,
+            "device_id": "",
+            "device_id_user_configured": False,
             "cookie": "",
             "heybox_id": "",
             "auto_reply_enabled": False,

@@ -45,7 +45,16 @@ class XHHAutoReplyPlugin(NekoPluginBase):
     @lifecycle(id="startup")
     async def startup(self, **_):
         self._settings = await self.config_store.load()
+        # v0.1.0 generated a random device_id even though OpenXHH defaults to
+        # an empty value. Clear that generated value once; an explicitly
+        # configured device ID is preserved by the marker below.
+        if self._settings.get("device_id") and not bool(
+            self._settings.get("device_id_user_configured")
+        ):
+            self._settings["device_id"] = ""
         if not await self.config_store.exists():
+            self._settings = await self.config_store.save(self._settings)
+        elif not self._settings.get("device_id"):
             self._settings = await self.config_store.save(self._settings)
         self._state = await self.state_store.load()
         await self._rebuild_services()
@@ -238,6 +247,7 @@ class XHHAutoReplyPlugin(NekoPluginBase):
                 "allowed_user_ids": {"type": "array", "items": {"type": "integer"}},
                 "reply_prompt": {"type": "string"},
                 "base_url": {"type": "string"},
+                "device_id": {"type": "string"},
             },
         },
     )
@@ -250,6 +260,7 @@ class XHHAutoReplyPlugin(NekoPluginBase):
             "allowed_user_ids",
             "reply_prompt",
             "base_url",
+            "device_id",
         }
         updates = {key: value for key, value in kwargs.items() if key in allowed}
         if "poll_interval_seconds" in updates:
@@ -269,6 +280,9 @@ class XHHAutoReplyPlugin(NekoPluginBase):
             if not base_url.startswith("https://"):
                 return Err(SdkError("base_url 必须使用 https://"))
             updates["base_url"] = base_url
+        if "device_id" in updates:
+            updates["device_id"] = str(updates["device_id"] or "").strip()
+            updates["device_id_user_configured"] = bool(updates["device_id"])
         self._settings.update(updates)
         await self.config_store.save(self._settings)
         await self._rebuild_services()

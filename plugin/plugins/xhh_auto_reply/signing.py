@@ -70,7 +70,9 @@ def build_request_keys(path: str, *, timestamp: int | None = None, nonce: str | 
         _sv(request_nonce, _KEY),
     ]
     values.sort(key=len)
-    digest = hashlib.md5(_interleave(values).encode()).hexdigest()
+    # OpenXHH only hashes the first 20 bytes of the interleaved ASCII string.
+    # Hashing the complete string produces a plausible-looking but invalid hkey.
+    digest = hashlib.md5(_interleave(values).encode()[:20]).hexdigest()
     suffix_values = [ord(char) for char in digest[-6:]]
     checksum = sum(_mixed(suffix_values)) % 100
     return f"{_av(digest[:5], _KEY, -4)}{checksum:02d}", request_nonce, request_time

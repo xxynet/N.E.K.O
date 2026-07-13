@@ -10,6 +10,13 @@ import httpx
 from .signing import build_request_keys, ensure_xhh_token_cookie
 
 
+WEB_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/125.0.0.0 Safari/537.36"
+)
+
+
 class XHHAPIError(RuntimeError):
     def __init__(self, message: str, *, status_code: int = 0, payload: Any = None):
         super().__init__(message)
@@ -56,19 +63,24 @@ class XHHClient:
                     "x_app": "heybox_website",
                     "x_os_type": "Windows",
                     "device_info": "Chrome",
-                    "device_id": str(self.settings.get("device_id") or ""),
                     "hkey": hkey,
                     "_time": str(request_time),
                     "nonce": nonce,
                     "_notip": "true",
                 }
             )
+            device_id = str(self.settings.get("device_id") or "").strip()
+            if device_id:
+                query["device_id"] = device_id
             heybox_id = str(self.settings.get("heybox_id") or "").strip()
             if heybox_id:
                 query["heybox_id"] = heybox_id
 
             base_url = str(self.settings.get("base_url") or "https://api.xiaoheihe.cn").rstrip("/")
-            headers = {"Referer": "https://www.xiaoheihe.cn/"}
+            headers = {
+                "Referer": "https://www.xiaoheihe.cn/",
+                "User-Agent": WEB_USER_AGENT,
+            }
             cookie = str(self.settings.get("cookie") or "").strip()
             if cookie:
                 headers["Cookie"] = ensure_xhh_token_cookie(cookie)
