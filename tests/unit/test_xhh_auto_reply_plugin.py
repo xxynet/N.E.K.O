@@ -6,7 +6,8 @@ import re
 import httpx
 import pytest
 
-from plugin.plugins.xhh_auto_reply.ai_service import normalize_generated_comment
+from plugin.plugins.xhh_auto_reply import ai_service as xhh_ai_module
+from plugin.plugins.xhh_auto_reply.ai_service import XHHAIService, normalize_generated_comment
 from plugin.plugins.xhh_auto_reply.client import WEB_USER_AGENT, XHHClient, normalize_mention
 from plugin.plugins.xhh_auto_reply.config_store import XHHConfigStore
 from plugin.plugins.xhh_auto_reply.signing import (
@@ -145,3 +146,76 @@ def test_normalize_post_mention_uses_link_description() -> None:
 def test_normalize_generated_comment_removes_wrappers_and_limits_length() -> None:
     assert normalize_generated_comment("```text\n评论：你好呀\n```", max_chars=10) == "你好呀"
     assert normalize_generated_comment("abcdefghijkl", max_chars=5) == "abcde"
+
+
+@pytest.mark.asyncio
+async def test_ai_generation_uses_qq_style_omni_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeConfigManager:
+        def get_model_api_config(self, model_type: str) -> dict[str, str]:
+            assert model_type == "conversation"
+            return {
+                "base_url": "https://example.invalid/v1",
+                "api_key": "secret",
+                "model": "test-model",
+                "provider_type": "openai_compatible",
+            }
+
+        def get_character_data(self) -> tuple[object, ...]:
+            return (
+                "主人",
+                "兰兰",
+                None,
+                {},
+                None,
+                {"兰兰": "你是 {LANLAN_NAME}，正在帮助 {MASTER_NAME}。"},
+                None,
+                None,
+                None,
+            )
+
+    class FakeOmniOfflineClient:
+        _is_responding = False
+
+        def __init__(self, **kwargs: object):
+            calls["init"] = kwargs
+            self.on_text_delta = kwargs["on_text_delta"]
+            self.on_response_done = kwargs["on_response_done"]
+
+        async def connect(self, instructions: str) -> None:
+            calls["instructions"] = instructions
+
+        async def stream_text(self, text: str) -> None:
+            calls["prompt"] = text
+            await self.on_text_delta("评论：流式", True)
+            await self.on_text_delta("回复", False)
+            await self.on_response_done()
+
+        async def close(self) -> None:
+            calls["closed"] = True
+
+    monkeypatch.setattr(xhh_ai_module, "get_config_manager", lambda: FakeConfigManager())
+    monkeypatch.setattr(xhh_ai_module, "OmniOfflineClient", FakeOmniOfflineClient)
+
+    service = XHHAIService(
+        {"reply_prompt": "小黑盒回复提示", "max_reply_chars": 30},
+        logging.getLogger(__name__),
+    )
+    result = await service.generate_comment(
+        user_text="请生成评论",
+        post_payload={"result": {"title": "测试帖子"}},
+    )
+
+    assert result == "流式回复"
+    instructions = str(calls["instructions"])
+    assert "兰兰" in instructions
+    assert "主人" in instructions
+    assert "小黑盒回复提示" in instructions
+    assert "小黑盒社区环境" in instructions
+    assert "测试帖子" in str(calls["prompt"])
+    assert calls["closed"] is True
+    init = calls["init"]
+    assert isinstance(init, dict)
+    assert init["model"] == "test-model"
+    assert init["max_response_length"] == 30
