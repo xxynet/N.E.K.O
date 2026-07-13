@@ -491,6 +491,10 @@ class XHHAutoReplyPlugin(NekoPluginBase):
                     )
                     self._state["processed_message_ids"] = sorted(processed)[-1000:]
                     await self.state_store.save(self._state)
+                    self.logger.info(
+                        f"小黑盒监听基线已建立: checked={len(mentions)} "
+                        f"baselined={len(mentions)}"
+                    )
                     return {
                         "checked": len(mentions),
                         "handled": 0,
@@ -504,11 +508,20 @@ class XHHAutoReplyPlugin(NekoPluginBase):
                 if not message_id or message_id in processed:
                     continue
                 user_id = int(mention.get("user_id") or 0)
+                message_type = int(mention.get("message_type") or 0)
+                link_id = int(mention.get("link_id") or 0)
+                user_name = " ".join(str(mention.get("user_name") or "").split())[:10]
+                message_text = " ".join(str(mention.get("text") or "").split())[:50]
+                self.logger.info(
+                    "小黑盒监听到新消息: "
+                    f"message_id={message_id} message_type={message_type} "
+                    f"link_id={link_id} user_id={user_id} "
+                    f"user_name={user_name!r} text={message_text!r}"
+                )
                 if allowed and user_id not in allowed:
                     processed.add(message_id)
                     results.append({"message_id": message_id, "status": "filtered"})
                     continue
-                link_id = int(mention.get("link_id") or 0)
                 if not link_id:
                     processed.add(message_id)
                     results.append({"message_id": message_id, "status": "missing_link_id"})
